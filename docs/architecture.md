@@ -10,7 +10,7 @@ flowchart LR
  Agent --> OR[OpenRouter model routing]
  OR --> Agent
  Agent --> FC[Firecrawl browsing]
- Agent --> Orbit[Orbit people context]
+ Agent --> Orbit[Orbit onboarding and people context]
  Agent --> Monid[Monid tool catalog and execution]
  Agent --> Confirm[Exact-call confirmation]
  Confirm --> UI
