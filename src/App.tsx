@@ -309,14 +309,14 @@ export default function App() {
     if (!drawer) return;
     const nav = navRef.current;
     const opener = drawerOpener.current;
-    nav?.querySelector<HTMLButtonElement>('button')?.focus();
+    if (!dialogRef.current) nav?.querySelector<HTMLButtonElement>('button')?.focus();
     function trap(event: KeyboardEvent) {
       if (!dialogRef.current) wrapFocus(event, nav);
     }
     document.addEventListener('keydown', trap);
     return () => {
       document.removeEventListener('keydown', trap);
-      opener?.focus();
+      if (!dialogRef.current) opener?.focus();
     };
   }, [drawer]);
   useEffect(() => {
