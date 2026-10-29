@@ -20,6 +20,8 @@
           ? 'dark'
           : 'light';
       }
+      document.querySelector('meta[name="theme-color"]').content =
+        document.documentElement.dataset.theme === 'light' ? '#fafbfc' : '#191c20';
     </script>
     <meta
       name="description"

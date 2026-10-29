@@ -1,5 +1,5 @@
 /** A new research workspace: session navigation, streamed answers, tool trace, and confirmations. */
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import {
   ArrowUp,
   ArrowUpRight,
@@ -24,6 +24,23 @@ import ThemeToggle from './ThemeToggle';
 interface Status {
   models: string[];
   providers: Record<string, { configured: boolean }>;
+}
+/** Wrap keyboard focus within the active drawer or modal. */
+function wrapFocus(event: KeyboardEvent, scope: HTMLElement | null) {
+  if (event.key !== 'Tab') return;
+  const targets = scope?.querySelectorAll<HTMLElement>(
+    'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled)',
+  );
+  if (!targets?.length) return;
+  const first = targets[0],
+    last = targets[targets.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 function Transcript({ events }: { events: Event[] }) {
   const turns = new Map<string, Event[]>();
@@ -187,9 +204,13 @@ function Confirmation({
 export default function App() {
   const [status, setStatus] = useState<Status | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [selected, setSelected] = useState<string | null>(() =>
-    localStorage.getItem('fomo:session'),
-  );
+  const [selected, setSelected] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('fomo:session');
+    } catch {
+      return null;
+    }
+  });
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [draft, setDraft] = useState('');
   const [model, setModel] = useState('');
@@ -198,12 +219,16 @@ export default function App() {
   const [token, setToken] = useState('');
   const [sending, setSending] = useState(false);
   const [sidebar, setSidebar] = useState(false);
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 767px)').matches);
+  const [focusRequest, setFocusRequest] = useState(0);
   const [settings, setSettings] = useState(false);
   const [mobilePanel, setMobilePanel] = useState('conversation');
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
   const navRef = useRef<HTMLElement>(null);
+  const drawerOpener = useRef<HTMLElement | null>(null);
+  const modalOpener = useRef<HTMLElement | null>(null);
   const cursor = useRef(0);
   const activeId = useRef(selected);
   const bottom = useRef<HTMLDivElement>(null);
@@ -231,8 +256,12 @@ export default function App() {
     cursor.current = 0;
     setSnapshot(null);
     follow.current = true;
-    if (selected) localStorage.setItem('fomo:session', selected);
-    else localStorage.removeItem('fomo:session');
+    try {
+      if (selected) localStorage.setItem('fomo:session', selected);
+      else localStorage.removeItem('fomo:session');
+    } catch {
+      // Session navigation still works in memory when browser storage is blocked.
+    }
   }, [selected]);
   useEffect(() => {
     if (!selected || locked) return;
@@ -269,37 +298,44 @@ export default function App() {
     };
   }, [selected, locked]);
   const eventCount = snapshot?.events.length ?? 0;
+  const drawer = sidebar && narrow;
   useEffect(() => {
-    const modal = settings || confirmDelete;
-    const drawer = sidebar && window.matchMedia('(max-width: 767px)').matches;
-    if (!modal && !drawer) return;
-    const opener = document.activeElement as HTMLElement | null;
-    const dialog = modal ? dialogRef.current : navRef.current;
-    dialog?.querySelector<HTMLButtonElement>('button')?.focus();
+    const query = window.matchMedia('(max-width: 767px)');
+    const update = () => setNarrow(query.matches);
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+  useEffect(() => {
+    if (!drawer) return;
+    const nav = navRef.current;
+    const opener = drawerOpener.current;
+    nav?.querySelector<HTMLButtonElement>('button')?.focus();
     function trap(event: KeyboardEvent) {
-      if (!modal && drawer && !window.matchMedia('(max-width: 767px)').matches) return;
-      if (event.key !== 'Tab') return;
-      const targets = dialog?.querySelectorAll<HTMLElement>(
-        'button:not(:disabled), a[href], input, select',
-      );
-      if (!targets?.length) return;
-      const first = targets[0],
-        last = targets[targets.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      }
-      if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
+      if (!dialogRef.current) wrapFocus(event, nav);
     }
     document.addEventListener('keydown', trap);
     return () => {
       document.removeEventListener('keydown', trap);
       opener?.focus();
     };
-  }, [settings, confirmDelete, sidebar]);
+  }, [drawer]);
+  useEffect(() => {
+    if (!settings && !confirmDelete) return;
+    const opener = modalOpener.current;
+    const dialog = dialogRef.current;
+    dialog?.querySelector<HTMLButtonElement>('button')?.focus();
+    function trap(event: KeyboardEvent) {
+      wrapFocus(event, dialog);
+    }
+    document.addEventListener('keydown', trap);
+    return () => {
+      document.removeEventListener('keydown', trap);
+      opener?.focus();
+    };
+  }, [settings, confirmDelete]);
+  useEffect(() => {
+    if (focusRequest) textarea.current?.focus();
+  }, [focusRequest]);
   useEffect(() => {
     if (eventCount > 0 && follow.current)
       bottom.current?.scrollIntoView({ block: 'end', behavior: 'instant' });
@@ -307,14 +343,14 @@ export default function App() {
   useEffect(() => {
     function key(e: KeyboardEvent) {
       if (e.key === 'Escape') {
-        setSidebar(false);
-        setSettings(false);
-        setConfirmDelete(false);
+        if (settings) setSettings(false);
+        else if (confirmDelete) setConfirmDelete(false);
+        else setSidebar(false);
       }
     }
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);
-  }, []);
+  }, [settings, confirmDelete]);
   const running = sending || Boolean(snapshot && snapshot.session.status !== 'idle');
   const pending = snapshot?.approvals.filter((a) => a.status === 'pending') ?? [];
   async function newSession() {
@@ -326,7 +362,11 @@ export default function App() {
     setError('');
     setSidebar(false);
     setMobilePanel('conversation');
-    textarea.current?.focus();
+    setFocusRequest((value) => value + 1);
+  }
+  function openSettings(event: MouseEvent<HTMLButtonElement>) {
+    modalOpener.current = event.currentTarget;
+    setSettings(true);
   }
   async function send(e?: FormEvent) {
     e?.preventDefault();
@@ -497,7 +537,7 @@ export default function App() {
               <Brand key={p} provider={p} />
             ))}
           </div>
-          <button className="stack-settings" onClick={() => setSettings(true)}>
+          <button className="stack-settings" onClick={openSettings}>
             <span>Four tools. One conversation.</span>
             <SlidersHorizontal size={17} />
           </button>
@@ -518,12 +558,15 @@ export default function App() {
           onClick={() => setSidebar(false)}
         />
       )}
-      <div className="main-shell">
+      <div className="main-shell" inert={drawer}>
         <header className="topbar">
           <div className="breadcrumbs">
             <button
               className="icon-button"
-              onClick={() => setSidebar(!sidebar)}
+              onClick={(event) => {
+                if (!sidebar) drawerOpener.current = event.currentTarget;
+                setSidebar(!sidebar);
+              }}
               aria-label="Toggle sessions"
               aria-controls="session-navigation"
               aria-expanded={sidebar}
@@ -539,17 +582,16 @@ export default function App() {
               {pending.length ? 'Needs your input' : running ? 'Working' : 'Ready'}
             </span>
             <ThemeToggle />
-            <button
-              className="icon-button"
-              onClick={() => setSettings(true)}
-              aria-label="Stack settings"
-            >
+            <button className="icon-button" onClick={openSettings} aria-label="Stack settings">
               <SlidersHorizontal size={19} />
             </button>
             {selected && (
               <button
                 className="icon-button"
-                onClick={() => setConfirmDelete(true)}
+                onClick={(event) => {
+                  modalOpener.current = event.currentTarget;
+                  setConfirmDelete(true);
+                }}
                 disabled={deleting || running}
                 aria-label="Delete conversation"
               >
@@ -565,6 +607,11 @@ export default function App() {
             onClick={() => setMobilePanel('conversation')}
           >
             Conversation
+            {pending.length > 0 && (
+              <span className="pending-count" role="status">
+                Needs input
+              </span>
+            )}
           </button>
           <button
             className={mobilePanel === 'workspace' ? 'active' : ''}

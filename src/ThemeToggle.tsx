@@ -3,6 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Moon, Sun } from '@phosphor-icons/react';
 
 type Theme = 'light' | 'dark';
+/** Keep browser chrome aligned with the active surface color. */
+function applyTheme(theme: Theme) {
+  document.documentElement.dataset.theme = theme;
+  const color = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color);
+}
 
 export default function ThemeToggle() {
   const explicitChoice = useRef<Theme | null>(null);
@@ -21,7 +27,7 @@ export default function ThemeToggle() {
       const next =
         explicitChoice.current ??
         (saved === 'light' || saved === 'dark' ? saved : media.matches ? 'dark' : 'light');
-      document.documentElement.dataset.theme = next;
+      applyTheme(next);
       setTheme(next);
     }
     sync();
@@ -32,7 +38,7 @@ export default function ThemeToggle() {
   function toggle() {
     const next = theme === 'dark' ? 'light' : 'dark';
     explicitChoice.current = next;
-    document.documentElement.dataset.theme = next;
+    applyTheme(next);
     setTheme(next);
     try {
       localStorage.setItem('fomo:theme', next);

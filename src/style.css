@@ -1272,6 +1272,15 @@ pre {
 .mobile-view-tabs {
   display: none;
 }
+.pending-count {
+  margin-left: 8px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  background: var(--accent-wash);
+  color: var(--accent-text);
+  white-space: nowrap;
+}
 @media (min-width: 1440px) {
   .content-grid {
     grid-template-columns: minmax(0, 1fr) 350px;
