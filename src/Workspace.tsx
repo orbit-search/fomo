@@ -23,7 +23,12 @@ export const brands: Record<
     image: '/brands/firecrawl.png',
     color: '#ff6b32',
   },
-  orbit: { name: 'Orbit', role: 'Know the people', image: '/brands/orbit.png', color: '#92b6ff' },
+  orbit: {
+    name: 'Orbit',
+    role: 'Instant agent onboarding',
+    image: '/brands/orbit.png',
+    color: '#92b6ff',
+  },
   monid: { name: 'Monid', role: 'Put tools to work', image: '/brands/monid.png', color: '#9899ff' },
   openrouter: {
     name: 'OpenRouter',

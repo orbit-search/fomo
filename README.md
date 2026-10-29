@@ -4,20 +4,26 @@
   <img src="public/fomo-mark.svg" width="168" height="168" alt="FOMO orbital mark" />
 </p>
 
-**Firecrawl · Orbit · Monid · OpenRouter.** A new agent stack for exploring the web, understanding people, and putting tools to work.
+**Firecrawl · Orbit · Monid · OpenRouter.** An agent stack for instant onboarding, personalized conversations, web research, and tool calling.
 
-Ask FOMO to read a page, learn about a person, or discover the right tool for a task. See the answer beside its sources, browser captures, people profiles, and execution receipts. Choose a model, inspect what ran, and stop work at any time.
+Use Orbit during onboarding to learn about the person joining your agent, so their role, background, and relevant interests can inform the conversation before their first message. From there, ask FOMO to research a page, learn more about a person, or find the right tool for a task. Follow the answer beside its sources, browser captures, people context, and execution receipts.
 
 ## The stack
 
 | Layer | Provider | What it does |
 | --- | --- | --- |
 | Browsing | [Firecrawl](https://docs.firecrawl.dev/features/browser) | Web search, Markdown reading, page captures, and an isolated browser reused within a conversation |
-| People | [Orbit](https://docs.orbitsearch.com) | Natural-language people search, public profile context, and cited sources |
+| Onboarding & context | [Orbit](https://docs.orbitsearch.com) | **Instant agent onboarding.** Gather people context before the first message, then deepen it with people search, public profiles, and cited sources |
 | Tools | [Monid](https://docs.monid.ai) | Discover endpoints, inspect their exact schemas and prices, execute approved calls, and follow asynchronous runs |
 | Models | [OpenRouter](https://openrouter.ai/docs/guides/features/tool-calling) | Stream model responses and function calls, with model and provider routing and configured fallbacks |
 
 One Node.js process serves a React interface and a TypeScript agent loop. SQLite keeps conversations, events, artifacts, confirmations, and operation receipts on disk. No local browser installation or agent sidecar is required.
+
+## Orbit: personalized before the first message
+
+Instant agent onboarding starts with knowing who is joining. Your onboarding flow can use Orbit to collect public, source-backed context about that person—their role, company, background, and relevant interests—before opening the conversation. Supply that context to the agent as it starts, so its first response is already tailored to the person it is helping.
+
+After onboarding, Orbit’s people search and profile tools let the agent learn more, prepare for meetings, understand someone’s work, and follow the sources behind each detail.
 
 ## Run locally
 
