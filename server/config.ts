@@ -8,7 +8,7 @@ export function config(env: NodeJS.ProcessEnv = process.env): Config {
   const operatorToken = env.FOMO_OPERATOR_TOKEN?.trim() || undefined;
   if (env.NODE_ENV === 'production' && (!operatorToken || operatorToken.length < 32))
     throw new Error('Production requires FOMO_OPERATOR_TOKEN with at least 32 characters.');
-  const models = (env.FOMO_MODELS || 'openai/gpt-5.4-mini,anthropic/claude-sonnet-4.5')
+  const models = (env.FOMO_MODELS || 'openai/gpt-6.1-terra,anthropic/claude-sonnet-5.5')
     .split(',')
     .map((x) => x.trim())
     .filter(Boolean);
