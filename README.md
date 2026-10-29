@@ -1,9 +1,12 @@
-# FOMO
+<h1 align="center">FOMO</h1>
+
+<p align="center">
+  <img src="public/fomo-mark.svg" width="168" height="168" alt="FOMO orbital mark" />
+</p>
 
 **Firecrawl · Orbit · Monid · OpenRouter.** A new agent stack for exploring the web, understanding people, and putting tools to work.
 
 Ask FOMO to read a page, learn about a person, or discover the right tool for a task. See the answer beside its sources, browser captures, people profiles, and execution receipts. Choose a model, inspect what ran, and stop work at any time.
-
 
 ## The stack
 
@@ -18,8 +21,6 @@ One Node.js process serves a React interface and a TypeScript agent loop. SQLite
 
 ## Run locally
 
-Use **Node.js 24** and **pnpm 10.33.4**.
-
 ```sh
 pnpm install --frozen-lockfile
 cp .env.example .env.local
@@ -32,7 +33,7 @@ OPENROUTER_API_KEY=...
 FIRECRAWL_API_KEY=...
 ORBIT_API_KEY=...
 MONID_API_KEY=...
-FOMO_MODELS=openai/gpt-5.4-mini,anthropic/claude-sonnet-4.5
+FOMO_MODELS=openai/gpt-6.1-terra,anthropic/claude-sonnet-5.5
 ```
 
 An OpenRouter key is required to chat. Each other key enables its provider’s tools; an absent key leaves that capability unavailable. FOMO never silently substitutes another provider. Orbit needs `search:read` and `profile:read` scopes. Set `MONID_WORKSPACE_ID` only when your account requires an explicit workspace.
@@ -53,6 +54,8 @@ Try:
 The Workspace tabs show real artifacts as they arrive. The conversation’s tool trace shows calls and results. No sample people, conversations, or tool output are inserted into a new instance.
 
 ## Model routing
+
+FOMO defaults to [GPT‑6.1 Terra](https://openrouter.ai/openai/gpt-6.1-terra), with [Claude Sonnet 5.5](https://openrouter.ai/anthropic/claude-sonnet-5.5) as its fallback. See the [model guide](docs/models.md) for the current choices and release sources.
 
 `FOMO_MODELS` is a comma-separated priority list of up to five tool-capable OpenRouter model IDs. “Auto route” sends that list to OpenRouter for fallback routing. Selecting a model moves it to the front; the remaining configured models stay available as fallbacks. The conversation records the model that actually answered.
 

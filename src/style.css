@@ -399,19 +399,6 @@ pre {
   letter-spacing: 0.1px;
   margin-bottom: 25px;
 }
-.mini-wordmark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 25px;
-  height: 25px;
-  background: var(--accent);
-  border-radius: 6px;
-  font-weight: 850;
-  font-size: 15px;
-  letter-spacing: -1px;
-  color: #192011;
-}
 .welcome h1 {
   font-size: clamp(30px, 3.2vw, 47px);
   letter-spacing: -1.9px;
@@ -930,11 +917,6 @@ pre {
   font-size: 10px;
   letter-spacing: 0.8px;
   margin-bottom: 17px;
-}
-.assistant-heading .mini-wordmark {
-  width: 22px;
-  height: 22px;
-  font-size: 13px;
 }
 .assistant-heading > svg {
   margin-left: auto;
@@ -1535,5 +1517,43 @@ pre {
   }
   .sidebar.is-open {
     visibility: visible;
+  }
+}
+
+/* Original FOMO orbital mark, paired vertically with the wordmark. */
+.brand-mark {
+  display: block;
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  margin: 17px 0 0 11px;
+}
+.mini-mark {
+  width: 27px;
+  height: 27px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.assistant-heading .mini-mark {
+  width: 23px;
+  height: 23px;
+}
+
+@media (min-width: 1024px) and (max-height: 800px) {
+  .welcome {
+    padding-top: 26px;
+  }
+  .welcome-kicker {
+    margin-bottom: 18px;
+  }
+  .welcome h1 {
+    font-size: 38px;
+  }
+  .welcome > p {
+    margin-top: 15px;
+  }
+  .prompt-suggestions {
+    margin-top: 24px;
+    margin-bottom: 16px;
   }
 }

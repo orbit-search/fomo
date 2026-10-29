@@ -56,7 +56,7 @@ function Transcript({ events }: { events: Event[] }) {
             )}
             <div className="assistant-message">
               <div className="assistant-heading">
-                <span className="mini-wordmark">F.</span>
+                <img className="mini-mark" src="/fomo-mark.svg" width="27" height="27" alt="" />
                 <span>FOMO</span>
                 {!done && <CircleNotch className="spin" size={14} />}
               </div>
@@ -203,6 +203,7 @@ export default function App() {
   const cursor = useRef(0);
   const activeId = useRef(selected);
   const bottom = useRef<HTMLDivElement>(null);
+  const scrollPane = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
   const textarea = useRef<HTMLTextAreaElement>(null);
   const request = useRef<{ text: string; clientId: string } | null>(null);
@@ -293,7 +294,8 @@ export default function App() {
     };
   }, [settings, confirmDelete]);
   useEffect(() => {
-    if (follow.current) bottom.current?.scrollIntoView({ block: 'end', behavior: 'instant' });
+    if (eventCount > 0 && follow.current)
+      bottom.current?.scrollIntoView({ block: 'end', behavior: 'instant' });
   }, [eventCount]);
   useEffect(() => {
     function key(e: KeyboardEvent) {
@@ -310,6 +312,7 @@ export default function App() {
   const pending = snapshot?.approvals.filter((a) => a.status === 'pending') ?? [];
   async function newSession() {
     if (sending) return;
+    scrollPane.current?.scrollTo({ top: 0 });
     setSelected(null);
     setDraft('');
     request.current = null;
@@ -439,6 +442,7 @@ export default function App() {
             <X />
           </button>
         </div>
+        <img className="brand-mark" src="/fomo-mark.svg" width="84" height="84" alt="" />
         <p className="sidebar-descriptor">The connected agent stack.</p>
         <button className="new-session" onClick={() => void newSession()}>
           <Plus size={17} />
@@ -547,6 +551,7 @@ export default function App() {
           <div className="conversation-column">
             <div
               className="conversation-scroll"
+              ref={scrollPane}
               onScroll={(e) => {
                 const el = e.currentTarget;
                 follow.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
@@ -555,7 +560,8 @@ export default function App() {
               {!snapshot?.events.length ? (
                 <div className="welcome">
                   <div className="welcome-kicker">
-                    <span className="mini-wordmark">F.</span>Connected by design.
+                    <img className="mini-mark" src="/fomo-mark.svg" width="27" height="27" alt="" />
+                    Connected by design.
                   </div>
                   <h1>
                     Less searching.
@@ -723,7 +729,7 @@ export default function App() {
             >
               <X />
             </button>
-            <span className="mini-wordmark">F.</span>
+            <img className="mini-mark" src="/fomo-mark.svg" width="27" height="27" alt="" />
             <h2 id="settings-title">Your stack, connected.</h2>
             <p>Each provider has a job. FOMO brings them together.</p>
             <Connections providers={status?.providers ?? {}} />
