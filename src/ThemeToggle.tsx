@@ -1,10 +1,11 @@
 /** Follow the system theme until the operator chooses an appearance. */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Moon, Sun } from '@phosphor-icons/react';
 
 type Theme = 'light' | 'dark';
 
 export default function ThemeToggle() {
+  const explicitChoice = useRef<Theme | null>(null);
   const [theme, setTheme] = useState<Theme>(() =>
     document.documentElement.dataset.theme === 'light' ? 'light' : 'dark',
   );
@@ -17,7 +18,9 @@ export default function ThemeToggle() {
       } catch {
         // Appearance still works when browser storage is unavailable.
       }
-      const next = saved === 'light' || saved === 'dark' ? saved : media.matches ? 'dark' : 'light';
+      const next =
+        explicitChoice.current ??
+        (saved === 'light' || saved === 'dark' ? saved : media.matches ? 'dark' : 'light');
       document.documentElement.dataset.theme = next;
       setTheme(next);
     }
@@ -28,6 +31,7 @@ export default function ThemeToggle() {
 
   function toggle() {
     const next = theme === 'dark' ? 'light' : 'dark';
+    explicitChoice.current = next;
     document.documentElement.dataset.theme = next;
     setTheme(next);
     try {

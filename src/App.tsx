@@ -270,13 +270,14 @@ export default function App() {
   }, [selected, locked]);
   const eventCount = snapshot?.events.length ?? 0;
   useEffect(() => {
+    const modal = settings || confirmDelete;
     const drawer = sidebar && window.matchMedia('(max-width: 767px)').matches;
-    if (!settings && !confirmDelete && !drawer) return;
+    if (!modal && !drawer) return;
     const opener = document.activeElement as HTMLElement | null;
-    const dialog = settings || confirmDelete ? dialogRef.current : navRef.current;
+    const dialog = modal ? dialogRef.current : navRef.current;
     dialog?.querySelector<HTMLButtonElement>('button')?.focus();
     function trap(event: KeyboardEvent) {
-      if (drawer && !window.matchMedia('(max-width: 767px)').matches) return;
+      if (!modal && drawer && !window.matchMedia('(max-width: 767px)').matches) return;
       if (event.key !== 'Tab') return;
       const targets = dialog?.querySelectorAll<HTMLElement>(
         'button:not(:disabled), a[href], input, select',
