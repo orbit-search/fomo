@@ -1,5 +1,5 @@
 /** A new research workspace: session navigation, streamed answers, tool trace, and confirmations. */
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import {
   ArrowUp,
   ArrowUpRight,
@@ -20,9 +20,27 @@ import type { Approval, Event, Provider, Session, Snapshot } from '../shared/typ
 import { api, ApiError } from './api';
 import Markdown from './Content';
 import Workspace, { Brand, Connections } from './Workspace';
+import ThemeToggle from './ThemeToggle';
 interface Status {
   models: string[];
   providers: Record<string, { configured: boolean }>;
+}
+/** Wrap keyboard focus within the active drawer or modal. */
+function wrapFocus(event: KeyboardEvent, scope: HTMLElement | null) {
+  if (event.key !== 'Tab') return;
+  const targets = scope?.querySelectorAll<HTMLElement>(
+    'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled)',
+  );
+  if (!targets?.length) return;
+  const first = targets[0],
+    last = targets[targets.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 function Transcript({ events }: { events: Event[] }) {
   const turns = new Map<string, Event[]>();
@@ -102,9 +120,11 @@ function Transcript({ events }: { events: Event[] }) {
               )}
               {text && <Markdown text={text} />}{' '}
               {!text && !done && !calls.length && (
-                <p className="thinking">
-                  Connecting the dots<span>…</span>
-                </p>
+                <div className="answer-loading" role="status" aria-label="Preparing a response">
+                  <span />
+                  <span />
+                  <span />
+                </div>
               )}
               {error && (
                 <div className="inline-error" role="status">
@@ -184,9 +204,13 @@ function Confirmation({
 export default function App() {
   const [status, setStatus] = useState<Status | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [selected, setSelected] = useState<string | null>(() =>
-    localStorage.getItem('fomo:session'),
-  );
+  const [selected, setSelected] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('fomo:session');
+    } catch {
+      return null;
+    }
+  });
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [draft, setDraft] = useState('');
   const [model, setModel] = useState('');
@@ -195,11 +219,16 @@ export default function App() {
   const [token, setToken] = useState('');
   const [sending, setSending] = useState(false);
   const [sidebar, setSidebar] = useState(false);
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 767px)').matches);
+  const [focusRequest, setFocusRequest] = useState(0);
   const [settings, setSettings] = useState(false);
   const [mobilePanel, setMobilePanel] = useState('conversation');
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const drawerOpener = useRef<HTMLElement | null>(null);
+  const modalOpener = useRef<HTMLElement | null>(null);
   const cursor = useRef(0);
   const activeId = useRef(selected);
   const bottom = useRef<HTMLDivElement>(null);
@@ -227,8 +256,12 @@ export default function App() {
     cursor.current = 0;
     setSnapshot(null);
     follow.current = true;
-    if (selected) localStorage.setItem('fomo:session', selected);
-    else localStorage.removeItem('fomo:session');
+    try {
+      if (selected) localStorage.setItem('fomo:session', selected);
+      else localStorage.removeItem('fomo:session');
+    } catch {
+      // Session navigation still works in memory when browser storage is blocked.
+    }
   }, [selected]);
   useEffect(() => {
     if (!selected || locked) return;
@@ -265,27 +298,34 @@ export default function App() {
     };
   }, [selected, locked]);
   const eventCount = snapshot?.events.length ?? 0;
+  const drawer = sidebar && narrow;
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 767px)');
+    const update = () => setNarrow(query.matches);
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+  useEffect(() => {
+    if (!drawer) return;
+    const nav = navRef.current;
+    const opener = drawerOpener.current;
+    if (!dialogRef.current) nav?.querySelector<HTMLButtonElement>('button')?.focus();
+    function trap(event: KeyboardEvent) {
+      if (!dialogRef.current) wrapFocus(event, nav);
+    }
+    document.addEventListener('keydown', trap);
+    return () => {
+      document.removeEventListener('keydown', trap);
+      if (!dialogRef.current) opener?.focus();
+    };
+  }, [drawer]);
   useEffect(() => {
     if (!settings && !confirmDelete) return;
-    const opener = document.activeElement as HTMLElement | null;
+    const opener = modalOpener.current;
     const dialog = dialogRef.current;
     dialog?.querySelector<HTMLButtonElement>('button')?.focus();
     function trap(event: KeyboardEvent) {
-      if (event.key !== 'Tab') return;
-      const targets = dialog?.querySelectorAll<HTMLElement>(
-        'button:not(:disabled), a[href], input, select',
-      );
-      if (!targets?.length) return;
-      const first = targets[0],
-        last = targets[targets.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      }
-      if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
+      wrapFocus(event, dialog);
     }
     document.addEventListener('keydown', trap);
     return () => {
@@ -294,20 +334,23 @@ export default function App() {
     };
   }, [settings, confirmDelete]);
   useEffect(() => {
+    if (focusRequest) textarea.current?.focus();
+  }, [focusRequest]);
+  useEffect(() => {
     if (eventCount > 0 && follow.current)
       bottom.current?.scrollIntoView({ block: 'end', behavior: 'instant' });
   }, [eventCount]);
   useEffect(() => {
     function key(e: KeyboardEvent) {
       if (e.key === 'Escape') {
-        setSidebar(false);
-        setSettings(false);
-        setConfirmDelete(false);
+        if (settings) setSettings(false);
+        else if (confirmDelete) setConfirmDelete(false);
+        else setSidebar(false);
       }
     }
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);
-  }, []);
+  }, [settings, confirmDelete]);
   const running = sending || Boolean(snapshot && snapshot.session.status !== 'idle');
   const pending = snapshot?.approvals.filter((a) => a.status === 'pending') ?? [];
   async function newSession() {
@@ -318,7 +361,12 @@ export default function App() {
     request.current = null;
     setError('');
     setSidebar(false);
-    textarea.current?.focus();
+    setMobilePanel('conversation');
+    setFocusRequest((value) => value + 1);
+  }
+  function openSettings(event: MouseEvent<HTMLButtonElement>) {
+    modalOpener.current = event.currentTarget;
+    setSettings(true);
   }
   async function send(e?: FormEvent) {
     e?.preventDefault();
@@ -429,7 +477,12 @@ export default function App() {
       <a className="skip-link" href="#prompt">
         Skip to prompt
       </a>
-      <nav className={`sidebar ${sidebar ? 'is-open' : ''}`} aria-label="Sessions">
+      <nav
+        ref={navRef}
+        id="session-navigation"
+        className={`sidebar ${sidebar ? 'is-open' : ''}`}
+        aria-label="Sessions"
+      >
         <div className="sidebar-brand">
           <a href="/" className="wordmark" aria-label="FOMO home">
             FOMO
@@ -446,7 +499,7 @@ export default function App() {
         <p className="sidebar-descriptor">The connected agent stack.</p>
         <button className="new-session" onClick={() => void newSession()}>
           <Plus size={17} />
-          New session<span className="mono">+</span>
+          New session
         </button>
         <div className="session-heading">
           Your sessions<span>{sessions.length}</span>
@@ -456,10 +509,12 @@ export default function App() {
             sessions.map((s) => (
               <button
                 className={selected === s.id ? 'selected' : ''}
+                aria-current={selected === s.id ? 'page' : undefined}
                 key={s.id}
                 onClick={() => {
                   setSelected(s.id);
                   setSidebar(false);
+                  setMobilePanel('conversation');
                   setError('');
                 }}
               >
@@ -482,11 +537,18 @@ export default function App() {
               <Brand key={p} provider={p} />
             ))}
           </div>
-          <button className="stack-settings" onClick={() => setSettings(true)}>
+          <button className="stack-settings" onClick={openSettings}>
             <span>Four tools. One conversation.</span>
             <SlidersHorizontal size={17} />
           </button>
-          <span className="local-note mono">LOCAL WORKSPACE</span>
+          <a
+            className="local-note"
+            href="https://github.com/orbit-search/fomo#readme"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Documentation <ArrowUpRight size={13} />
+          </a>
         </div>
       </nav>
       {sidebar && (
@@ -496,13 +558,18 @@ export default function App() {
           onClick={() => setSidebar(false)}
         />
       )}
-      <div className="main-shell">
+      <div className="main-shell" inert={drawer}>
         <header className="topbar">
           <div className="breadcrumbs">
             <button
               className="icon-button"
-              onClick={() => setSidebar(!sidebar)}
+              onClick={(event) => {
+                if (!sidebar) drawerOpener.current = event.currentTarget;
+                setSidebar(!sidebar);
+              }}
               aria-label="Toggle sessions"
+              aria-controls="session-navigation"
+              aria-expanded={sidebar}
             >
               <SidebarSimple size={21} />
             </button>
@@ -514,17 +581,17 @@ export default function App() {
             <span className={`agent-status ${running ? 'working' : ''}`}>
               {pending.length ? 'Needs your input' : running ? 'Working' : 'Ready'}
             </span>
-            <button
-              className="icon-button"
-              onClick={() => setSettings(true)}
-              aria-label="Stack settings"
-            >
+            <ThemeToggle />
+            <button className="icon-button" onClick={openSettings} aria-label="Stack settings">
               <SlidersHorizontal size={19} />
             </button>
             {selected && (
               <button
                 className="icon-button"
-                onClick={() => setConfirmDelete(true)}
+                onClick={(event) => {
+                  modalOpener.current = event.currentTarget;
+                  setConfirmDelete(true);
+                }}
                 disabled={deleting || running}
                 aria-label="Delete conversation"
               >
@@ -536,12 +603,19 @@ export default function App() {
         <div className="mobile-view-tabs">
           <button
             className={mobilePanel === 'conversation' ? 'active' : ''}
+            aria-pressed={mobilePanel === 'conversation'}
             onClick={() => setMobilePanel('conversation')}
           >
             Conversation
+            {pending.length > 0 && (
+              <span className="pending-count" role="status">
+                Needs input
+              </span>
+            )}
           </button>
           <button
             className={mobilePanel === 'workspace' ? 'active' : ''}
+            aria-pressed={mobilePanel === 'workspace'}
             onClick={() => setMobilePanel('workspace')}
           >
             Workspace {snapshot?.artifacts.length ? `(${snapshot.artifacts.length})` : ''}
@@ -559,10 +633,7 @@ export default function App() {
             >
               {!snapshot?.events.length ? (
                 <div className="welcome">
-                  <div className="welcome-kicker">
-                    <img className="mini-mark" src="/fomo-mark.svg" width="27" height="27" alt="" />
-                    Connected by design.
-                  </div>
+                  <div className="welcome-kicker">Your stack, in sync.</div>
                   <h1>
                     Less searching.
                     <br />
@@ -706,7 +777,9 @@ export default function App() {
                   </div>
                 </div>
               </form>
-              <p className="composer-footnote">Powered by Firecrawl, Orbit, Monid & OpenRouter.</p>
+              <p className="composer-footnote">
+                Firecrawl, Orbit, Monid & OpenRouter. Connected by FOMO.
+              </p>
             </div>
           </div>
           <Workspace artifacts={snapshot?.artifacts ?? []} providers={status?.providers ?? {}} />

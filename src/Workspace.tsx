@@ -6,7 +6,6 @@ import {
   UsersThree,
   Wrench,
   Browser,
-  CaretRight,
   Copy,
   Check,
 } from '@phosphor-icons/react';
@@ -213,6 +212,8 @@ export default function Workspace({
       ? artifacts
       : artifacts.filter((a) => a.kind === kind || (kind === 'page' && a.kind === 'browser'));
   const current = visible.find((a) => a.id === selected) ?? visible[0];
+  const filteredEmpty = artifacts.length > 0 && kind !== 'all';
+  const emptyLabel = kind === 'page' ? 'web pages' : kind === 'people' ? 'people' : 'tool results';
   return (
     <aside className="workspace" aria-label="Research workspace">
       <div className="workspace-heading">
@@ -292,29 +293,31 @@ export default function Workspace({
         ) : (
           <div className="workspace-empty">
             <div className="empty-stamp">
-              <GlobeHemisphereWest weight="light" size={44} />
-              <span>+</span>
-              <UsersThree weight="light" size={42} />
-              <span>+</span>
-              <Wrench weight="light" size={36} />
+              <Browser weight="light" size={28} />
             </div>
-            <h2>
-              The context behind
-              <br />
-              the conversation.
-            </h2>
-            <p>Pages, people, and tool results land here as FOMO works.</p>
+            {filteredEmpty ? (
+              <h2>No {emptyLabel} yet.</h2>
+            ) : (
+              <h2>
+                The context behind
+                <br />
+                the conversation.
+              </h2>
+            )}
+            <p>
+              {filteredEmpty
+                ? 'Results appear here when FOMO uses this part of your stack.'
+                : 'Pages, people, and tool results land here as FOMO works.'}
+            </p>
             <div className="stack-label">
-              <span>Your stack, connected</span>
-              <CaretRight />
+              <span>Your connected stack</span>
             </div>
             <Connections providers={providers} />
           </div>
         )}
       </div>
       <footer className="workspace-footer">
-        <span>From source to answer.</span>
-        <span className="mono">F / O / M / O</span>
+        <span>Sources stay with the conversation.</span>
       </footer>
     </aside>
   );

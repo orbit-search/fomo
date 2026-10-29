@@ -4,12 +4,30 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="/fomo-mark.svg" type="image/svg+xml" />
-    <meta name="theme-color" content="#171918" />
+    <meta name="theme-color" content="#191c20" />
+    <script>
+      // Resolve appearance before paint. A saved preference wins over the system.
+      try {
+        const saved = localStorage.getItem('fomo:theme');
+        document.documentElement.dataset.theme =
+          saved === 'light' || saved === 'dark'
+            ? saved
+            : matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+      } catch {
+        document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light';
+      }
+      document.querySelector('meta[name="theme-color"]').content =
+        document.documentElement.dataset.theme === 'light' ? '#fafbfc' : '#191c20';
+    </script>
     <meta
       name="description"
-      content="FOMO — browse, find people, and put tools to work. Firecrawl, Orbit, Monid, OpenRouter."
+      content="FOMO: browse, find people, and put tools to work. Firecrawl, Orbit, Monid, OpenRouter."
     />
-    <title>FOMO — Bring it all together</title>
+    <title>FOMO - Bring it all together</title>
   </head>
   <body>
     <div id="root"></div>
