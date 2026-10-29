@@ -20,6 +20,7 @@ import type { Approval, Event, Provider, Session, Snapshot } from '../shared/typ
 import { api, ApiError } from './api';
 import Markdown from './Content';
 import Workspace, { Brand, Connections } from './Workspace';
+import ThemeToggle from './ThemeToggle';
 interface Status {
   models: string[];
   providers: Record<string, { configured: boolean }>;
@@ -102,9 +103,11 @@ function Transcript({ events }: { events: Event[] }) {
               )}
               {text && <Markdown text={text} />}{' '}
               {!text && !done && !calls.length && (
-                <p className="thinking">
-                  Connecting the dots<span>…</span>
-                </p>
+                <div className="answer-loading" role="status" aria-label="Preparing a response">
+                  <span />
+                  <span />
+                  <span />
+                </div>
               )}
               {error && (
                 <div className="inline-error" role="status">
@@ -200,6 +203,7 @@ export default function App() {
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement>(null);
   const cursor = useRef(0);
   const activeId = useRef(selected);
   const bottom = useRef<HTMLDivElement>(null);
@@ -266,11 +270,13 @@ export default function App() {
   }, [selected, locked]);
   const eventCount = snapshot?.events.length ?? 0;
   useEffect(() => {
-    if (!settings && !confirmDelete) return;
+    const drawer = sidebar && window.matchMedia('(max-width: 767px)').matches;
+    if (!settings && !confirmDelete && !drawer) return;
     const opener = document.activeElement as HTMLElement | null;
-    const dialog = dialogRef.current;
+    const dialog = settings || confirmDelete ? dialogRef.current : navRef.current;
     dialog?.querySelector<HTMLButtonElement>('button')?.focus();
     function trap(event: KeyboardEvent) {
+      if (drawer && !window.matchMedia('(max-width: 767px)').matches) return;
       if (event.key !== 'Tab') return;
       const targets = dialog?.querySelectorAll<HTMLElement>(
         'button:not(:disabled), a[href], input, select',
@@ -292,7 +298,7 @@ export default function App() {
       document.removeEventListener('keydown', trap);
       opener?.focus();
     };
-  }, [settings, confirmDelete]);
+  }, [settings, confirmDelete, sidebar]);
   useEffect(() => {
     if (eventCount > 0 && follow.current)
       bottom.current?.scrollIntoView({ block: 'end', behavior: 'instant' });
@@ -318,6 +324,7 @@ export default function App() {
     request.current = null;
     setError('');
     setSidebar(false);
+    setMobilePanel('conversation');
     textarea.current?.focus();
   }
   async function send(e?: FormEvent) {
@@ -429,7 +436,12 @@ export default function App() {
       <a className="skip-link" href="#prompt">
         Skip to prompt
       </a>
-      <nav className={`sidebar ${sidebar ? 'is-open' : ''}`} aria-label="Sessions">
+      <nav
+        ref={navRef}
+        id="session-navigation"
+        className={`sidebar ${sidebar ? 'is-open' : ''}`}
+        aria-label="Sessions"
+      >
         <div className="sidebar-brand">
           <a href="/" className="wordmark" aria-label="FOMO home">
             FOMO
@@ -446,7 +458,7 @@ export default function App() {
         <p className="sidebar-descriptor">The connected agent stack.</p>
         <button className="new-session" onClick={() => void newSession()}>
           <Plus size={17} />
-          New session<span className="mono">+</span>
+          New session
         </button>
         <div className="session-heading">
           Your sessions<span>{sessions.length}</span>
@@ -456,10 +468,12 @@ export default function App() {
             sessions.map((s) => (
               <button
                 className={selected === s.id ? 'selected' : ''}
+                aria-current={selected === s.id ? 'page' : undefined}
                 key={s.id}
                 onClick={() => {
                   setSelected(s.id);
                   setSidebar(false);
+                  setMobilePanel('conversation');
                   setError('');
                 }}
               >
@@ -486,7 +500,14 @@ export default function App() {
             <span>Four tools. One conversation.</span>
             <SlidersHorizontal size={17} />
           </button>
-          <span className="local-note mono">LOCAL WORKSPACE</span>
+          <a
+            className="local-note"
+            href="https://github.com/orbit-search/fomo#readme"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Documentation <ArrowUpRight size={13} />
+          </a>
         </div>
       </nav>
       {sidebar && (
@@ -503,6 +524,8 @@ export default function App() {
               className="icon-button"
               onClick={() => setSidebar(!sidebar)}
               aria-label="Toggle sessions"
+              aria-controls="session-navigation"
+              aria-expanded={sidebar}
             >
               <SidebarSimple size={21} />
             </button>
@@ -514,6 +537,7 @@ export default function App() {
             <span className={`agent-status ${running ? 'working' : ''}`}>
               {pending.length ? 'Needs your input' : running ? 'Working' : 'Ready'}
             </span>
+            <ThemeToggle />
             <button
               className="icon-button"
               onClick={() => setSettings(true)}
@@ -536,12 +560,14 @@ export default function App() {
         <div className="mobile-view-tabs">
           <button
             className={mobilePanel === 'conversation' ? 'active' : ''}
+            aria-pressed={mobilePanel === 'conversation'}
             onClick={() => setMobilePanel('conversation')}
           >
             Conversation
           </button>
           <button
             className={mobilePanel === 'workspace' ? 'active' : ''}
+            aria-pressed={mobilePanel === 'workspace'}
             onClick={() => setMobilePanel('workspace')}
           >
             Workspace {snapshot?.artifacts.length ? `(${snapshot.artifacts.length})` : ''}
@@ -559,10 +585,7 @@ export default function App() {
             >
               {!snapshot?.events.length ? (
                 <div className="welcome">
-                  <div className="welcome-kicker">
-                    <img className="mini-mark" src="/fomo-mark.svg" width="27" height="27" alt="" />
-                    Connected by design.
-                  </div>
+                  <div className="welcome-kicker">Your stack, in sync.</div>
                   <h1>
                     Less searching.
                     <br />
@@ -706,7 +729,9 @@ export default function App() {
                   </div>
                 </div>
               </form>
-              <p className="composer-footnote">Powered by Firecrawl, Orbit, Monid & OpenRouter.</p>
+              <p className="composer-footnote">
+                Firecrawl, Orbit, Monid & OpenRouter. Connected by FOMO.
+              </p>
             </div>
           </div>
           <Workspace artifacts={snapshot?.artifacts ?? []} providers={status?.providers ?? {}} />
