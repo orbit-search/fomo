@@ -1,49 +1,49 @@
-/* FOMO: one neutral palette, one lime accent, and shared light/dark semantic tokens.
+/* FOMO: one neutral palette, one blue accent, and shared light/dark semantic tokens.
    Shape scale: controls 8px, grouped surfaces 12px, composer/dialog 16px.
    Layer scale: copy control 1, mobile scrim 10, navigation 11, dialog 20, skip link 30. */
 :root {
   font-family: 'Geist Variable', sans-serif;
   font-synthesis: none;
   font-weight: 400;
-  --bg: #fbfcf9;
-  --sidebar: #eef1e9;
-  --panel: #f4f6f1;
-  --raised: #e9ede3;
-  --input: #fdfefb;
-  --line: #d9ded2;
-  --ink: #23291d;
-  --muted: #5c6653;
-  --quiet: #65705c;
-  --accent: #d3ed94;
-  --accent-hover: #c8e781;
-  --accent-ink: #263316;
-  --accent-text: #435a1d;
-  --accent-wash: #e7efda;
+  --bg: #fafbfc;
+  --sidebar: #f0f2f5;
+  --panel: #f4f6f8;
+  --raised: #e9edf2;
+  --input: #fdfefe;
+  --line: #d9dfe7;
+  --ink: #202833;
+  --muted: #596575;
+  --quiet: #626f80;
+  --accent: #315f9b;
+  --accent-hover: #284f85;
+  --accent-ink: #f7f9fc;
+  --accent-text: #315f9b;
+  --accent-wash: #e8eef8;
   --error: #9b3624;
   --error-wash: #f9ede6;
-  --shadow: 0 6px 24px #30401909;
+  --shadow: 0 6px 24px #20304909;
   color: var(--ink);
   background: var(--bg);
   color-scheme: light;
 }
 :root[data-theme='dark'] {
-  --bg: #181a19;
-  --sidebar: #131612;
-  --panel: #1c201a;
-  --raised: #272d24;
-  --input: #20251e;
-  --line: #343b30;
-  --ink: #eff1ed;
-  --muted: #afb5a9;
-  --quiet: #98a18f;
-  --accent: #d3ed94;
-  --accent-hover: #e0f4af;
-  --accent-ink: #263316;
-  --accent-text: #cde89b;
-  --accent-wash: #2c3523;
+  --bg: #191c20;
+  --sidebar: #14171b;
+  --panel: #1d2228;
+  --raised: #2a3039;
+  --input: #222830;
+  --line: #363f4b;
+  --ink: #eef2f8;
+  --muted: #b0bbc9;
+  --quiet: #9aa8ba;
+  --accent: #abc7f4;
+  --accent-hover: #c0d5f7;
+  --accent-ink: #192e4c;
+  --accent-text: #b4cdf5;
+  --accent-wash: #29374c;
   --error: #f3b5a2;
   --error-wash: #34261f;
-  --shadow: 0 6px 24px #0b120b22;
+  --shadow: 0 6px 24px #0a101b22;
   color-scheme: dark;
 }
 * {
@@ -1171,7 +1171,7 @@ pre {
   position: fixed;
   inset: 0;
   z-index: 20;
-  background: #10160dd1;
+  background: #111820d1;
   display: grid;
   place-items: center;
   padding: 20px;
@@ -1464,7 +1464,7 @@ pre {
     display: block;
     position: fixed;
     inset: 0;
-    background: #10160d99;
+    background: #11182099;
     z-index: 10;
   }
   .breadcrumbs > .icon-button {
