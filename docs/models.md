@@ -21,7 +21,7 @@ The runtime default, `.env.example`, and README use the same route. Existing pri
 
 ## Verification
 
-Use `FOMO_LIVE_MODELS=1 pnpm eval:models` to verify each configured model individually. This uses the model API: each model must emit a tool call, accept its tool result, and produce the expected final answer. Models are tested without fallbacks so a successful substitute cannot hide an unavailable route. Private reports are written under `.fomo/quality/`.
+Use `FOMO_LIVE_MODELS=1 pnpm eval:models` to verify each configured model individually. This uses the model API: each model must emit a tool call, accept its tool result, and produce the expected final answer. The expected answer contains a fresh receipt generated after the model commits to its tool call and exposed only in that tool’s result. Models are tested without fallbacks so a successful substitute cannot hide an unavailable route. Private reports are written under `.fomo/quality/`.
 
 ## Sources
 

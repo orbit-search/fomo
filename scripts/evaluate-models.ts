@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { config } from '../server/config.ts';
 import { OpenRouter } from '../server/providers/openrouter.ts';
 import { ProviderError } from '../server/http.ts';
@@ -15,7 +16,7 @@ const tools: ToolDefinition[] = [
     type: 'function',
     function: {
       name: 'echo',
-      description: 'Return the supplied text exactly.',
+      description: 'Return the supplied text and a fresh verification receipt.',
       parameters: {
         type: 'object',
         properties: { text: { type: 'string' } },
@@ -38,12 +39,11 @@ for (const model of settings.models) {
   const start = Date.now();
   const actualModels: string[] = [];
   try {
-    const signal = AbortSignal.timeout(120000);
     const messages: Message[] = [
       {
         role: 'system',
         content:
-          'Call echo exactly once with text fomo-model-proof. After receiving the tool result, reply with exactly FOMO_MODEL_OK. Do not call another tool.',
+          'Call echo exactly once with text fomo-model-proof. After receiving the tool result, reply with exactly its receipt field and nothing else. Do not call another tool.',
       },
       { role: 'user', content: 'Run the echo verification.' },
     ];
@@ -51,7 +51,7 @@ for (const model of settings.models) {
       messages,
       tools,
       [model],
-      signal,
+      AbortSignal.timeout(120000),
       () => {},
       (m) => actualModels.push(m),
     );
@@ -60,21 +60,23 @@ for (const model of settings.models) {
     const call = first.message.tool_calls![0];
     assert.equal(call.function.name, 'echo');
     assert.deepEqual(JSON.parse(call.function.arguments), { text: 'fomo-model-proof' });
+    // Generate the challenge after the model has committed to its tool call.
+    const receipt = `FOMO_MODEL_OK_${randomBytes(18).toString('hex')}`;
     messages.push(first.message, {
       role: 'tool',
       tool_call_id: call.id,
-      content: JSON.stringify({ text: 'fomo-model-proof' }),
+      content: JSON.stringify({ text: 'fomo-model-proof', receipt }),
     });
     const second = await router.complete(
       messages,
       tools,
       [model],
-      signal,
+      AbortSignal.timeout(120000),
       () => {},
       (m) => actualModels.push(m),
     );
     assert.equal(second.model, model);
-    assert.equal(second.message.content?.trim(), 'FOMO_MODEL_OK');
+    assert.equal(second.message.content?.trim(), receipt);
     assert.ok(!second.message.tool_calls?.length);
     results.push({
       model,
