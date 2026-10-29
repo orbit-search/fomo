@@ -1,4 +1,4 @@
-/** Orbit's public v3 contract and replay-safe search receipts, adapted from BELLO behavior. */
+/** Orbit's public v3 contract and replay-safe search receipts. */
 import { describe, it, expect } from 'vitest';
 import { OrbitClient } from '../server/providers/orbit.ts';
 import { Tools } from '../server/tools.ts';

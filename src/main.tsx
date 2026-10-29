@@ -1,4 +1,4 @@
-/** FOMO's new client, independent of BELLO and its agent SDK. */
+/** FOMO's React client for conversations, tool calls, and source evidence. */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource-variable/geist';

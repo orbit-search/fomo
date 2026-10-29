@@ -4,7 +4,6 @@
 
 Ask FOMO to read a page, learn about a person, or discover the right tool for a task. See the answer beside its sources, browser captures, people profiles, and execution receipts. Choose a model, inspect what ran, and stop work at any time.
 
-FOMO starts from [BELLO’s](https://github.com/NicholasDominici/bello) useful ideas—conversation beside evidence, server-held credentials, replay-safe people search—but has a new runtime, UI, storage model, and tool layer. It has no Eve, Browserbase, Stagehand, Link, Linq, or 1Password dependency.
 
 ## The stack
 
@@ -100,8 +99,8 @@ The live suite checks OpenRouter function calling, Firecrawl search/read/capture
 
 See [architecture](docs/architecture.md) and [quality evidence](docs/quality.md) for boundaries and release checks.
 
-## Attribution
+## License
 
-Inspired by BELLO and the MIT-licensed [Browserbase BELL stack](https://github.com/browserbase/bell-stack). The Orbit v3 client was adapted from BELLO; the remaining runtime and interface were built for FOMO. Provider logos remain the property of their respective owners. Orbit’s logo is the supplied original PNG.
+Provider logos remain the property of their respective owners.
 
 [MIT](LICENSE).

@@ -1,6 +1,6 @@
 # Architecture
 
-FOMO owns its agent runtime. It does not wrap BELLO’s Eve agent or keep its payments/messaging/browser sidecars.
+FOMO owns its agent runtime, provider adapters, conversation journal, and research workspace.
 
 ```mermaid
 flowchart LR

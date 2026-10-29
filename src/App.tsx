@@ -738,8 +738,8 @@ export default function App() {
                 front of that list.
               </p>
             </div>
-            <a href="https://github.com/NicholasDominici/bello" target="_blank" rel="noreferrer">
-              Inspired by BELLO
+            <a href="https://github.com/orbit-search/fomo#readme" target="_blank" rel="noreferrer">
+              FOMO documentation
               <ArrowUpRight size={13} />
             </a>
           </section>
